@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinVista — Исправление недочётов</title>
+    <!-- Подключение Tailwind CSS для адаптивной верстки и стилизации -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Подключение шрифта Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="finvista_grafic.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <!-- Шапка сайта -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 gap-3">
+                <!-- Логотип и название проекта -->
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                        FV
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h1 class="text-lg sm:text-xl font-bold text-slate-900">FinVista — Финансовый аналитический центр</h1>
+                            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                v1.2.0
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500">Персональный кабинет для управления финансами, инвестициями, накоплениями и кредитами</p>
+                    </div>
+                </div>
+
+                <div id="public-actions" class="flex items-center gap-2">
+                    <button type="button" data-auth-mode="login"
+                        class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+                        Войти
+                    </button>
+                    <button type="button" data-auth-mode="register"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition cursor-pointer">
+                        Создать профиль
+                    </button>
+                </div>
+                <div id="profile-actions" class="hidden flex items-center gap-2">
+                    <span id="profile-greeting" class="text-sm font-medium text-slate-700"></span>
+                    <button id="btn-profile" type="button"
+                        class="px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-50 rounded-xl transition cursor-pointer">
+                        Мой профиль
+                    </button>
+                    <button id="btn-reset-demo" type="button"
+                        class="px-3 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer">
+                        Сбросить данные профиля
+                    </button>
+                    <button id="btn-logout" type="button"
+                        class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+                        Выйти
+                    </button>
+                </div>
+            </div>
+
+            <!-- Разделы доступны только после входа в профиль -->
+            <nav id="module-navigation" class="hidden flex space-x-1 sm:space-x-2 overflow-x-auto pb-3 pt-1" aria-label="Модули системы">
+                <button data-tab="finance"
+                    class="nav-btn active px-4 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap transition cursor-pointer bg-indigo-600 text-white shadow-sm">
+                    1. Управление финансами
+                </button>
+                <button data-tab="investments"
+                    class="nav-btn px-4 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap transition cursor-pointer text-slate-600 hover:bg-slate-100">
+                    2. Инвестиции
+                </button>
+                <button data-tab="savings"
+                    class="nav-btn px-4 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap transition cursor-pointer text-slate-600 hover:bg-slate-100">
+                    3. Сберегательные счета
+                </button>
+                <button data-tab="currency"
+                    class="nav-btn px-4 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap transition cursor-pointer text-slate-600 hover:bg-slate-100">
+                    4. Обмен валют
+                </button>
+                <button data-tab="loans"
+                    class="nav-btn px-4 py-2.5 text-sm font-medium rounded-xl whitespace-nowrap transition cursor-pointer text-slate-600 hover:bg-slate-100">
+                    5. Кредитная история
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Область уведомлений (вместо alert) -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full px-4 sm:px-0 pointer-events-none"></div>
+
+    <!-- Основной контент -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <section id="landing-page" class="space-y-10">
+            <div class="overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-950 via-indigo-950 to-indigo-800 text-white shadow-xl">
+                <div class="grid items-center gap-10 px-6 py-12 sm:px-10 lg:grid-cols-2 lg:px-16 lg:py-20">
+                    <div>
+                        <span class="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-indigo-100">
+                            Финансы, цели и планы — в одном месте
+                        </span>
+                        <h2 class="mt-6 max-w-xl text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
+                            Уверенно управляйте своим финансовым будущим
+                        </h2>
+                        <p class="mt-5 max-w-xl text-base leading-7 text-indigo-100 sm:text-lg">
+                            FinVista помогает видеть полную картину личных финансов: контролировать расходы, следить за накоплениями и принимать более взвешенные решения.
+                        </p>
+                        <div class="mt-8 flex flex-wrap gap-3">
+                            <button type="button" data-auth-mode="register"
+                                class="rounded-xl bg-white px-5 py-3 text-sm font-semibold text-indigo-950 shadow-sm transition hover:bg-indigo-50 cursor-pointer">
+                                Создать бесплатный профиль
+                            </button>
+                            <button type="button" data-auth-mode="login"
+                                class="rounded-xl border border-white/30 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 cursor-pointer">
+                                Уже есть профиль? Войти
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute -right-8 -top-8 h-40 w-40 rounded-full bg-cyan-400/20 blur-3xl"></div>
+                        <div class="financial-overview-card relative rounded-3xl border border-white/15 bg-white/10 p-6 shadow-2xl backdrop-blur">
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <p class="text-sm text-indigo-100">Ваш финансовый обзор</p>
+                                    <p class="mt-2 text-3xl font-bold">Ясность в каждом решении</p>
+                                </div>
+                                <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 text-xl">✦</div>
+                            </div>
+                            <div class="mt-8 space-y-3">
+                                <div class="info-card flex items-center gap-4 rounded-2xl bg-white/10 p-4">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-400/20 text-emerald-200">↗</span>
+                                    <div><p class="font-semibold">Расходы под контролем</p><p class="mt-0.5 text-xs text-indigo-100">Понятная история и категории операций</p></div>
+                                </div>
+                                <div class="info-card flex items-center gap-4 rounded-2xl bg-white/10 p-4">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-400/20 text-amber-200">◎</span>
+                                    <div><p class="font-semibold">Цели становятся ближе</p><p class="mt-0.5 text-xs text-indigo-100">Накопления и инвестиции в одном обзоре</p></div>
+                                </div>
+                                <div class="info-card flex items-center gap-4 rounded-2xl bg-white/10 p-4">
+                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-400/20 text-sky-200">◇</span>
+                                    <div><p class="font-semibold">Больше финансовой уверенности</p><p class="mt-0.5 text-xs text-indigo-100">Валюты, кредиты и личный баланс</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid gap-4 md:grid-cols-3">
+                <article class="info-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p class="text-sm font-semibold text-indigo-600">01 / Понимайте</p>
+                    <h3 class="mt-3 text-lg font-semibold text-slate-900">Одна картина финансов</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Баланс, операции и расходы собраны в одном персональном пространстве.</p>
+                </article>
+                <article class="info-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p class="text-sm font-semibold text-indigo-600">02 / Планируйте</p>
+                    <h3 class="mt-3 text-lg font-semibold text-slate-900">Двигайтесь к своим целям</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Создавайте сберегательные цели, отслеживайте прогресс и изучайте портфель.</p>
+                </article>
+                <article class="info-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <p class="text-sm font-semibold text-indigo-600">03 / Решайте</p>
+                    <h3 class="mt-3 text-lg font-semibold text-slate-900">Сравнивайте и контролируйте</h3>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">Просматривайте демонстрационные курсы обмена и график платежей по кредитам.</p>
+                </article>
+            </div>
+            <p class="text-center text-xs text-slate-400">Демонстрационные балансы, операции, курсы, ставки и котировки вымышлены и не являются реальными финансовыми данными, рекомендацией или предложением.</p>
+        </section>
+
+        <section id="auth-screen" class="hidden mx-auto max-w-lg">
+            <button id="btn-back-home" type="button" class="mb-5 text-sm font-medium text-indigo-700 hover:text-indigo-900 cursor-pointer">← Вернуться на главную</button>
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                <div class="mb-6">
+                    <p class="text-sm font-semibold text-indigo-600">FinVista</p>
+                    <h2 id="auth-heading" class="mt-2 text-2xl font-bold text-slate-900">Войти в профиль</h2>
+                    <p id="auth-description" class="mt-2 text-sm text-slate-500">Введите данные, указанные при создании профиля.</p>
+                </div>
+                <form id="form-login" class="space-y-4">
+                    <div>
+                        <label for="login-email" class="mb-1 block text-sm font-medium text-slate-700">Электронная почта</label>
+                        <input id="login-email" type="email" autocomplete="email" required
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="login-password" class="mb-1 block text-sm font-medium text-slate-700">Пароль</label>
+                        <div class="relative">
+                            <input id="login-password" type="password" autocomplete="current-password" required
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="button" data-toggle-password="login-password" aria-pressed="false"
+                                class="absolute inset-y-0 right-3 text-xs font-medium text-indigo-700 hover:text-indigo-900 cursor-pointer">Показать</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 cursor-pointer">Войти</button>
+                    <p class="text-center text-sm text-slate-500">Еще нет профиля? <button type="button" data-auth-mode="register" class="font-semibold text-indigo-700 hover:text-indigo-900 cursor-pointer">Создать</button></p>
+                </form>
+                <form id="form-register" class="hidden space-y-4">
+                    <div>
+                        <label for="register-name" class="mb-1 block text-sm font-medium text-slate-700">Как к вам обращаться</label>
+                        <input id="register-name" type="text" autocomplete="name" maxlength="60" required
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="register-email" class="mb-1 block text-sm font-medium text-slate-700">Электронная почта</label>
+                        <input id="register-email" type="email" autocomplete="email" required
+                            class="w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="register-password" class="mb-1 block text-sm font-medium text-slate-700">Пароль</label>
+                        <div class="relative">
+                            <input id="register-password" type="password" autocomplete="new-password" minlength="8" required
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="button" data-toggle-password="register-password" aria-pressed="false"
+                                class="absolute inset-y-0 right-3 text-xs font-medium text-indigo-700 hover:text-indigo-900 cursor-pointer">Показать</button>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400">Не менее 8 символов</p>
+                    </div>
+                    <button type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 cursor-pointer">Создать профиль</button>
+                    <p class="text-center text-sm text-slate-500">Уже есть профиль? <button type="button" data-auth-mode="login" class="font-semibold text-indigo-700 hover:text-indigo-900 cursor-pointer">Войти</button></p>
+                </form>
+                <p class="mt-6 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Демо-профили и финансовые данные хранятся только в этом браузере. Это не серверная база данных: не используйте реальные пароли или финансовую информацию.</p>
+            </div>
+        </section>
+
+        <section id="profile-dialog" class="hidden fixed inset-0 z-40 overflow-y-auto bg-slate-950/50 px-4 py-8" role="dialog" aria-modal="true" aria-labelledby="profile-dialog-title">
+            <div class="mx-auto max-w-lg rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-8">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-semibold text-indigo-600">Личные данные</p>
+                        <h2 id="profile-dialog-title" class="mt-1 text-2xl font-bold text-slate-900">Мой профиль</h2>
+                    </div>
+                    <button id="btn-close-profile" type="button" aria-label="Закрыть профиль"
+                        class="rounded-lg px-3 py-1 text-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer">×</button>
+                </div>
+
+                <dl class="mt-6 space-y-4 rounded-2xl bg-slate-50 p-4">
+                    <div>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Имя</dt>
+                        <dd id="profile-name-value" class="mt-1 font-medium text-slate-900"></dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Электронная почта</dt>
+                        <dd id="profile-email-value" class="mt-1 break-all font-medium text-slate-900"></dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Пароль</dt>
+                        <dd class="mt-1 font-mono tracking-widest text-slate-700">••••••••</dd>
+                        <p class="mt-1 text-xs leading-5 text-slate-500">Пароль сохранен в виде хэша и не может быть просмотрен. При необходимости задайте новый.</p>
+                    </div>
+                </dl>
+
+                <button id="btn-show-change-password" type="button"
+                    class="mt-5 w-full rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 cursor-pointer">
+                    Изменить пароль
+                </button>
+
+                <form id="form-change-password" class="hidden mt-5 space-y-4 border-t border-slate-200 pt-5">
+                    <h3 class="font-semibold text-slate-900">Смена пароля</h3>
+                    <div>
+                        <label for="current-password" class="mb-1 block text-sm font-medium text-slate-700">Текущий пароль</label>
+                        <div class="relative">
+                            <input id="current-password" type="password" autocomplete="current-password" required
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="button" data-toggle-password="current-password" aria-pressed="false"
+                                class="absolute inset-y-0 right-3 text-xs font-medium text-indigo-700 hover:text-indigo-900 cursor-pointer">Показать</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="new-password" class="mb-1 block text-sm font-medium text-slate-700">Новый пароль</label>
+                        <div class="relative">
+                            <input id="new-password" type="password" autocomplete="new-password" minlength="8" required
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="button" data-toggle-password="new-password" aria-pressed="false"
+                                class="absolute inset-y-0 right-3 text-xs font-medium text-indigo-700 hover:text-indigo-900 cursor-pointer">Показать</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="confirm-password" class="mb-1 block text-sm font-medium text-slate-700">Повторите новый пароль</label>
+                        <div class="relative">
+                            <input id="confirm-password" type="password" autocomplete="new-password" minlength="8" required
+                                class="w-full rounded-xl border border-slate-300 px-3 py-2.5 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <button type="button" data-toggle-password="confirm-password" aria-pressed="false"
+                                class="absolute inset-y-0 right-3 text-xs font-medium text-indigo-700 hover:text-indigo-900 cursor-pointer">Показать</button>
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 cursor-pointer">Сохранить новый пароль</button>
+                </form>
+            </div>
+        </section>
+
+        <div id="dashboard-page" class="hidden space-y-6">
+        <!-- ========================================================= -->
+        <!-- МОДУЛЬ 1: УПРАВЛЕНИЕ ФИНАНСАМИ                            -->
+        <!-- ========================================================= -->
+        <section id="tab-finance" class="tab-section space-y-6">
+            <!-- Сводные карточки -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Общий баланс (RUB)</p>
+                    <p id="fin-total-balance" class="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">0 ₽</p>
+                    <p class="text-xs text-slate-400 mt-2">Текущий остаток на основном рублевом счете</p>
+                </div>
+                <div class="info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Общие доходы</p>
+                    <p id="fin-total-income" class="text-2xl sm:text-3xl font-bold text-emerald-600 mt-1">+0 ₽</p>
+                    <p class="text-xs text-slate-400 mt-2">Сумма всех поступлений за период</p>
+                </div>
+                <div class="info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Общие расходы</p>
+                    <p id="fin-total-expense" class="text-2xl sm:text-3xl font-bold text-rose-600 mt-1">-0 ₽</p>
+                    <p class="text-xs text-slate-400 mt-2">Сумма всех списаний по категориям</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Форма добавления новой операции -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Новая операция</h2>
+                    <form id="form-transaction" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Тип операции</label>
+                            <select id="tx-type" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="expense">Расход</option>
+                                <option value="income">Доход</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Категория</label>
+                            <select id="tx-category" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="Продукты и питание">Продукты и питание</option>
+                                <option value="Транспорт">Транспорт</option>
+                                <option value="Жилье и коммунальные услуги">Жилье и коммунальные услуги</option>
+                                <option value="Образование и софт">Образование и софт</option>
+                                <option value="Зарплата / Стипендия">Зарплата / Стипендия</option>
+                                <option value="Дивиденды и проценты">Дивиденды и проценты</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Сумма (RUB)</label>
+                            <input id="tx-amount" type="number" step="0.01" placeholder="Например, 2500" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Описание</label>
+                            <input id="tx-desc" type="text" placeholder="Комментарий к операции" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Дата</label>
+                            <input id="tx-date" type="date" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-sm transition cursor-pointer">
+                            Добавить операцию
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Аналитика по категориям + История операций -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Визуализация структуры расходов -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-slate-900">Аналитика расходов по категориям</h2>
+                            <span class="text-xs text-slate-500">Доля от общих расходов</span>
+                        </div>
+                        <div id="expense-categories-chart" class="space-y-3">
+                            <!-- Прогресс-бары генерируются через JS -->
+                        </div>
+                    </div>
+
+                    <!-- Таблица истории операций -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-900 mb-4">История финансовых операций</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase">
+                                        <th class="py-3 px-2">Дата</th>
+                                        <th class="py-3 px-2">Категория</th>
+                                        <th class="py-3 px-2">Описание</th>
+                                        <th class="py-3 px-2 text-right">Сумма</th>
+                                        <th class="py-3 px-2 text-center">Действие</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tx-table-body" class="divide-y divide-slate-100 text-sm">
+                                    <!-- Строки заполняются через JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- МОДУЛЬ 2: ИНВЕСТИЦИИ                                      -->
+        <!-- ========================================================= -->
+        <section id="tab-investments" class="tab-section hidden space-y-6">
+            <!-- Сводные карточки портфеля -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Стоимость портфеля</p>
+                    <p id="inv-portfolio-value" class="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">0 ₽</p>
+                    <p class="text-xs text-slate-400 mt-2">Текущая рыночная оценка активов</p>
+                </div>
+                <div class="info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Вложенная сумма</p>
+                    <p id="inv-invested-sum" class="text-2xl sm:text-3xl font-bold text-slate-800 mt-1">0 ₽</p>
+                    <p class="text-xs text-slate-400 mt-2">Затраты на приобретение активов</p>
+                </div>
+                <div class="info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Общая доходность</p>
+                    <p id="inv-profit" class="text-2xl sm:text-3xl font-bold text-emerald-600 mt-1">0 ₽ (0%)</p>
+                    <p class="text-xs text-slate-400 mt-2">Нереализованный финансовый результат</p>
+                </div>
+            </div>
+
+            <!-- Рынок доступных активов -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-900">Доступные инвестиционные инструменты</h2>
+                        <p class="text-xs text-slate-500">Покупка и продажа активов с использованием основного рублевого баланса</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span id="market-wind-status" class="text-xs text-slate-500" aria-live="polite">Подключение к симулятору рынка…</span>
+                        <span id="inv-available-cash" class="text-sm font-semibold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl">
+                            Доступно: 0 ₽
+                        </span>
+                    </div>
+                </div>
+
+                <div id="market-assets-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Карточки активов генерируются через JS -->
+                </div>
+            </div>
+
+            <!-- Таблица портфеля пользователя -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h2 class="text-lg font-semibold text-slate-900 mb-4">Мой инвестиционный портфель</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase">
+                                <th class="py-3 px-2">Актив</th>
+                                <th class="py-3 px-2">Тип</th>
+                                <th class="py-3 px-2 text-right">Кол-во (шт.)</th>
+                                <th class="py-3 px-2 text-right">Ср. цена покупки</th>
+                                <th class="py-3 px-2 text-right">Текущая цена</th>
+                                <th class="py-3 px-2 text-right">Стоимость</th>
+                                <th class="py-3 px-2 text-right">Доходность</th>
+                            </tr>
+                        </thead>
+                        <tbody id="portfolio-table-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Строки портфеля -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- МОДУЛЬ 3: СБЕРЕГАТЕЛЬНЫЕ СЧЕТА                            -->
+        <!-- ========================================================= -->
+        <section id="tab-savings" class="tab-section hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Форма создания нового сберегательного счета -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Открыть сберегательный счет</h2>
+                    <form id="form-saving-goal" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Название цели / счета</label>
+                            <input id="goal-name" type="text" placeholder="Например, Резервный фонд" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Целевая сумма (RUB)</label>
+                            <input id="goal-target" type="number" step="100" placeholder="Например, 150000" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Начальный взнос (RUB)</label>
+                            <input id="goal-initial" type="number" step="100" value="0" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Годовая процентная ставка (%)</label>
+                            <input id="goal-rate" type="number" step="0.1" value="14.5" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <button type="submit"
+                            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-sm transition cursor-pointer">
+                            Создать сберегательный счет
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Список сберегательных счетов -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-lg font-semibold text-slate-900">Активные сберегательные счета</h2>
+                        <span id="savings-total-badge" class="text-sm font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl">
+                            Всего накоплено: 0 ₽
+                        </span>
+                    </div>
+                    <div id="savings-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Карточки счетов генерируются через JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- МОДУЛЬ 4: ОБМЕН ВАЛЮТ                                     -->
+        <!-- ========================================================= -->
+        <section id="tab-currency" class="tab-section hidden space-y-6">
+            <!-- Балансы валютных счетов -->
+            <div id="currency-wallets-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Карточки валютных кошельков -->
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Калькулятор и форма обмена валют -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-4">Конвертация и обмен валют</h2>
+                    <form id="form-currency-exchange" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Списать со счета</label>
+                            <select id="ex-from" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="RUB">RUB — Российский рубль</option>
+                                <option value="USD">USD — Доллар США</option>
+                                <option value="EUR">EUR — Евро</option>
+                                <option value="CNY">CNY — Китайский юань</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Зачислить на счет</label>
+                            <select id="ex-to" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="USD" selected>USD — Доллар США</option>
+                                <option value="EUR">EUR — Евро</option>
+                                <option value="CNY">CNY — Китайский юань</option>
+                                <option value="RUB">RUB — Российский рубль</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Сумма списания</label>
+                            <input id="ex-amount" type="number" step="0.01" value="10000" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+
+                        <!-- Предварительный расчет курса -->
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
+                            <p class="text-xs text-slate-500">Расчетный курс конвертации:</p>
+                            <p id="ex-rate-preview" class="text-sm font-semibold text-slate-800">1 USD = 92.50 RUB</p>
+                            <p class="text-xs text-slate-500 pt-1">Сумма к зачислению:</p>
+                            <p id="ex-result-preview" class="text-lg font-bold text-indigo-600">108.11 USD</p>
+                        </div>
+
+                        <button type="submit"
+                            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-sm transition cursor-pointer">
+                            Выполнить обмен валют
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Актуальные курсы + История обменов -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Таблица курсов валют -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-900 mb-3">Индикативные курсы валют (к RUB)</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                                <span class="font-semibold text-slate-700">USD / RUB</span>
+                                <span class="font-bold text-slate-900">92.50 ₽</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                                <span class="font-semibold text-slate-700">EUR / RUB</span>
+                                <span class="font-bold text-slate-900">100.20 ₽</span>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex justify-between items-center">
+                                <span class="font-semibold text-slate-700">CNY / RUB</span>
+                                <span class="font-bold text-slate-900">12.80 ₽</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- История валютных обменов -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-900 mb-4">История валютных обменов</h2>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-slate-200 text-xs font-semibold text-slate-500 uppercase">
+                                        <th class="py-3 px-2">Дата и время</th>
+                                        <th class="py-3 px-2">Списано</th>
+                                        <th class="py-3 px-2">Зачислено</th>
+                                        <th class="py-3 px-2 text-right">Курс сделки</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="exchange-history-body" class="divide-y divide-slate-100 text-sm">
+                                    <!-- История обменов -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================= -->
+        <!-- МОДУЛЬ 5: КРЕДИТЫ                                        -->
+        <!-- ========================================================= -->
+        <section id="tab-loans" class="tab-section hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Остаток долга</p>
+                    <p id="loans-total-debt" class="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">0 ₽</p>
+                    <p class="text-xs text-slate-400 mt-2">Сумма непогашенного основного долга</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Активные кредиты</p>
+                    <p id="loans-active-count" class="text-2xl sm:text-3xl font-bold text-slate-900 mt-1">0</p>
+                    <p class="text-xs text-slate-400 mt-2">Кредиты, по которым еще есть задолженность</p>
+                </div>
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <p class="text-sm font-medium text-slate-500">Платеж в месяц</p>
+                    <p id="loans-monthly-total" class="text-2xl sm:text-3xl font-bold text-indigo-600 mt-1">0 ₽</p>
+                    <p class="text-xs text-slate-400 mt-2">Сумма платежей по активным кредитам</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm h-fit">
+                    <h2 class="text-lg font-semibold text-slate-900 mb-1">Оформить кредит</h2>
+                    <p class="text-sm text-slate-500 mb-4">Деньги поступят на основной счет RUB</p>
+                    <form id="form-loan" class="space-y-4">
+                        <div>
+                            <label for="loan-amount" class="block text-sm font-medium text-slate-700 mb-1">Сумма кредита (RUB)</label>
+                            <input id="loan-amount" type="number" min="10000" max="1000000" step="1000" value="100000" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <p class="text-xs text-slate-400 mt-1">От 10 000 до 1 000 000 ₽</p>
+                        </div>
+                        <div>
+                            <label for="loan-term" class="block text-sm font-medium text-slate-700 mb-1">Срок (месяцев)</label>
+                            <input id="loan-term" type="number" min="3" max="60" step="1" value="12" required
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                            <div class="flex justify-between gap-3 text-sm">
+                                <span class="text-slate-500">Ставка</span>
+                                <span class="font-semibold text-slate-800">6% годовых</span>
+                            </div>
+                            <div class="flex justify-between gap-3 text-sm">
+                                <span class="text-slate-500">Платеж в месяц</span>
+                                <span id="loan-payment-preview" class="font-semibold text-slate-800">—</span>
+                            </div>
+                            <div class="flex justify-between gap-3 text-sm">
+                                <span class="text-slate-500">Всего к возврату</span>
+                                <span id="loan-total-preview" class="font-semibold text-slate-800">—</span>
+                            </div>
+                        </div>
+                        <button type="submit"
+                            class="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-sm transition cursor-pointer">
+                            Получить кредит
+                        </button>
+                    </form>
+                    <p class="text-xs text-slate-400 mt-4">Учебный расчет аннуитетных платежей. Это демонстрация, а не предложение финансовой организации.</p>
+                </div>
+
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <h2 class="text-lg font-semibold text-slate-900">Мои кредиты</h2>
+                        <span id="loan-cash-balance" class="text-sm font-semibold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl">На счете: 0 ₽</span>
+                    </div>
+                    <div id="loans-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Карточки кредитов генерируются через JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+        </div>
+
+    </main>
+
+    <!-- Подвал сайта -->
+    <footer class="bg-white border-t border-slate-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
+            <p class="text-center text-xs leading-5 text-amber-800" role="note">
+                Важно: это учебная демонстрация. Сервис не подключается к биржам и не выполняет реальные финансовые операции.
+                Используйте только вымышленные данные и не вводите реальные персональные или банковские сведения.
+                Имя, email, хэш пароля и профиль хранятся только в localStorage этого браузера и не синхронизируются с сервером.
+                При публичном доступе Cloudflare может обрабатывать сетевые метаданные; Tailwind и Google Fonts загружаются со сторонних CDN.
+                Проект не предназначен для незаконной деятельности.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+                <p>Учебный проект по ПМ.06 «Сопровождение информационных систем» • Вариант: «FinVista: Финансовый аналитический центр»</p>
+                <p>СПб ГБПОУ «Колледж метростроя» • Специальность 09.02.07</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ========================================================= -->
+    <!-- ЛОГИКА ПРИЛОЖЕНИЯ (JAVASCRIPT)                            -->
+    <!-- ========================================================= -->
+    <script>
+        // Локальное хранилище предназначено только для демонстрации в одном браузере.
+        const STORAGE_KEY = 'finvista_state_v1';
+        const USERS_STORAGE_KEY = 'finvista_users_v1';
+        const SESSION_STORAGE_KEY = 'finvista_session_user_v1';
+        const PASSWORD_HASH_ITERATIONS = 120000;
+        let users = [];
+        let usersLoadFailed = false;
+        let currentUser = null;
+        let appState = getDefaultState();
+
+        try {
+            users = loadUsers();
+        } catch (err) {
+            console.error('Ошибка чтения локальной базы профилей:', err);
+            usersLoadFailed = true;
+        }
+
+        // Базовые курсы валют относительно 1 RUB
+        const CURRENCY_RATES_TO_RUB = {
+            RUB: 1.0,
+            USD: 92.50,
+            EUR: 100.20,
+            CNY: 12.80
+        };
+
+        const CURRENCY_SYMBOLS = {
+            RUB: '₽',
+            USD: '$',
+            EUR: '€',
+            CNY: '¥'
+        };
+
+        // Справочник доступных рыночных активов
+        const MARKET_ASSETS = [
+            { id: 'SBER', name: 'Сбербанк (ао)', type: 'Акции', price: 312.50, change: '+1.45%' },
+            { id: 'YDEX', name: 'Яндекс МКПАО', type: 'Акции', price: 4180.00, change: '+2.10%' },
+            { id: 'OFZ26238', name: 'ОФЗ 26238', type: 'Облигации', price: 564.20, change: '+0.25%' },
+            { id: 'GLDRUB', name: 'Золото (GLDRUB)', type: 'ETF / Металлы', price: 7850.00, change: '-0.40%' }
+        ];
+        const MARKET_REFRESH_INTERVAL_MS = 5000;
+
+        async function refreshMarketData() {
+            const status = document.getElementById('market-wind-status');
+            try {
+                const response = await fetch('/api/market', { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`Market API returned HTTP ${response.status}`);
+                }
+
+                const market = await response.json();
+                if (
+                    !market
+                    || !Number.isFinite(market.wind)
+                    || !Number.isFinite(market.windChange)
+                    || !market.prices
+                    || !market.priceChangesPct
+                ) {
+                    throw new Error('Market API returned an invalid response.');
+                }
+
+                MARKET_ASSETS.filter(asset => asset.type === 'Акции').forEach(asset => {
+                    const price = market.prices[asset.id];
+                    const change = market.priceChangesPct[asset.id];
+                    if (!Number.isFinite(price) || !Number.isFinite(change)) {
+                        throw new Error(`Market API has no valid data for ${asset.id}.`);
+                    }
+                    asset.price = price;
+                    asset.change = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
+                });
+
+                const windSign = market.wind > 0 ? '+' : '';
+                const changeSign = market.windChange > 0 ? '+' : '';
+                status.textContent = `Ветер: ${windSign}${market.wind} (${changeSign}${market.windChange}) • обновление раз в 2 мин.`;
+                status.className = `text-xs ${market.windChange >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
+                renderInvestmentsModule();
+            } catch (error) {
+                console.error('Не удалось получить данные симулятора рынка:', error);
+                status.textContent = 'Симулятор недоступен. Запустите python server.py.';
+                status.className = 'text-xs text-rose-700';
+            }
+        }
+
+        // Начальные демо-данные для первого запуска
+        function getDefaultState() {
+            return {
+                wallets: {
+                    RUB: 0,
+                    USD: 0,
+                    EUR: 0,
+                    CNY: 0
+                },
+                transactions: [],
+                portfolio: [],
+                savings: [],
+                exchanges: [],
+                loans: []
+            };
+        }
+
+        function loadUsers() {
+            const raw = localStorage.getItem(USERS_STORAGE_KEY);
+            if (!raw) return [];
+            const savedUsers = JSON.parse(raw);
+            if (!Array.isArray(savedUsers)) {
+                throw new Error('В локальном хранилище профилей ожидался список пользователей');
+            }
+            return savedUsers;
+        }
+
+        function saveUsers() {
+            try {
+                localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+                return true;
+            } catch (err) {
+                console.error('Ошибка сохранения локальной базы профилей:', err);
+                showToast('Не удалось сохранить данные профиля в этом браузере', 'error');
+                return false;
+            }
+        }
+
+        function normalizeState(savedState) {
+            if (!savedState || typeof savedState !== 'object') return getDefaultState();
+            const defaults = getDefaultState();
+            return {
+                ...defaults,
+                ...savedState,
+                wallets: { ...defaults.wallets, ...(savedState.wallets || {}) },
+                transactions: Array.isArray(savedState.transactions) ? savedState.transactions : defaults.transactions,
+                portfolio: Array.isArray(savedState.portfolio) ? savedState.portfolio : defaults.portfolio,
+                savings: Array.isArray(savedState.savings) ? savedState.savings : defaults.savings,
+                exchanges: Array.isArray(savedState.exchanges) ? savedState.exchanges : defaults.exchanges,
+                loans: Array.isArray(savedState.loans)
+                    ? savedState.loans.map(loan => ({
+                        ...loan,
+                        annualRate: 6,
+                        monthlyPayment: calculateMonthlyPayment(
+                            Number(loan.balance),
+                            6,
+                            Number(loan.monthsLeft)
+                        )
+                    }))
+                    : []
+            };
+        }
+
+        function loadLegacyState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? normalizeState(JSON.parse(raw)) : getDefaultState();
+            } catch (err) {
+                console.error('Ошибка чтения прежних демо-данных:', err);
+                showToast('Не удалось перенести прежние демо-данные. Для профиля будут созданы новые.', 'error');
+                return getDefaultState();
+            }
+        }
+
+        function saveState() {
+            if (!currentUser) {
+                showToast('Войдите в профиль, чтобы сохранять финансовые данные', 'error');
+                return;
+            }
+            currentUser.data = appState;
+            if (!saveUsers()) return;
+        }
+
+        function bytesToHex(bytes) {
+            return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        function hexToBytes(hex) {
+            return new Uint8Array(hex.match(/.{2}/g).map(byte => parseInt(byte, 16)));
+        }
+
+        async function hashPassword(password, salt) {
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw',
+                new TextEncoder().encode(password),
+                'PBKDF2',
+                false,
+                ['deriveBits']
+            );
+            const hash = await crypto.subtle.deriveBits({
+                name: 'PBKDF2',
+                salt,
+                iterations: PASSWORD_HASH_ITERATIONS,
+                hash: 'SHA-256'
+            }, keyMaterial, 256);
+            return bytesToHex(new Uint8Array(hash));
+        }
+
+        async function registerProfile(event) {
+            event.preventDefault();
+            if (usersLoadFailed) {
+                showToast('Локальную базу профилей прочитать не удалось. Регистрация остановлена.', 'error');
+                return;
+            }
+            if (!window.crypto || !window.crypto.subtle) {
+                showToast('Браузер не поддерживает безопасное хэширование пароля. Профиль не создан.', 'error');
+                return;
+            }
+
+            const name = document.getElementById('register-name').value.trim();
+            const email = document.getElementById('register-email').value.trim().toLowerCase();
+            const password = document.getElementById('register-password').value;
+            if (!name || password.length < 8) {
+                showToast('Укажите имя и пароль не короче 8 символов', 'error');
+                return;
+            }
+            if (users.some(user => user.email === email)) {
+                showToast('Профиль с такой электронной почтой уже существует', 'error');
+                return;
+            }
+
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            let passwordHash;
+            try {
+                passwordHash = await hashPassword(password, salt);
+            } catch (err) {
+                console.error('Ошибка хэширования пароля:', err);
+                showToast('Не удалось подготовить безопасное хранение пароля', 'error');
+                return;
+            }
+
+            const initialState = users.length === 0 ? loadLegacyState() : getDefaultState();
+            const user = {
+                id: `${Date.now()}-${bytesToHex(crypto.getRandomValues(new Uint8Array(8)))}`,
+                name,
+                email,
+                passwordSalt: bytesToHex(salt),
+                passwordHash,
+                data: initialState
+            };
+            users.push(user);
+            if (!saveUsers()) {
+                users.pop();
+                return;
+            }
+
+            if (users.length === 1) {
+                try {
+                    localStorage.removeItem(STORAGE_KEY);
+                } catch (err) {
+                    console.error('Не удалось удалить перенесенные демо-данные:', err);
+                }
+            }
+            event.target.reset();
+            enterProfile(user);
+            showToast(`Профиль создан. Добро пожаловать, ${name}!`, 'success');
+        }
+
+        async function loginProfile(event) {
+            event.preventDefault();
+            if (usersLoadFailed) {
+                showToast('Локальную базу профилей прочитать не удалось. Вход невозможен.', 'error');
+                return;
+            }
+            if (!window.crypto || !window.crypto.subtle) {
+                showToast('Браузер не поддерживает проверку пароля', 'error');
+                return;
+            }
+
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
+            const password = document.getElementById('login-password').value;
+            const user = users.find(item => item.email === email);
+            if (!user || !/^[0-9a-f]{32}$/i.test(user.passwordSalt || '') || !/^[0-9a-f]{64}$/i.test(user.passwordHash || '')) {
+                showToast('Неверная электронная почта или пароль', 'error');
+                return;
+            }
+
+            let passwordHash;
+            try {
+                const salt = hexToBytes(user.passwordSalt);
+                passwordHash = await hashPassword(password, salt);
+            } catch (err) {
+                console.error('Ошибка проверки пароля:', err);
+                showToast('Не удалось проверить пароль', 'error');
+                return;
+            }
+            if (passwordHash !== user.passwordHash) {
+                showToast('Неверная электронная почта или пароль', 'error');
+                return;
+            }
+
+            event.target.reset();
+            enterProfile(user);
+            showToast(`С возвращением, ${user.name}!`, 'success');
+        }
+
+        function openProfile() {
+            if (!currentUser) return;
+            document.getElementById('profile-name-value').textContent = currentUser.name;
+            document.getElementById('profile-email-value').textContent = currentUser.email;
+            document.getElementById('form-change-password').classList.add('hidden');
+            document.getElementById('form-change-password').reset();
+            document.getElementById('btn-show-change-password').classList.remove('hidden');
+            resetPasswordVisibility(document.getElementById('profile-dialog'));
+            document.getElementById('profile-dialog').classList.remove('hidden');
+        }
+
+        function closeProfile() {
+            document.getElementById('profile-dialog').classList.add('hidden');
+            document.getElementById('form-change-password').reset();
+            document.getElementById('form-change-password').classList.add('hidden');
+            document.getElementById('btn-show-change-password').classList.remove('hidden');
+            resetPasswordVisibility(document.getElementById('profile-dialog'));
+        }
+
+        function resetPasswordVisibility(container) {
+            container.querySelectorAll('[data-toggle-password]').forEach(button => {
+                const input = document.getElementById(button.dataset.togglePassword);
+                input.type = 'password';
+                button.textContent = 'Показать';
+                button.setAttribute('aria-pressed', 'false');
+            });
+        }
+
+        async function changePassword(event) {
+            event.preventDefault();
+            if (!currentUser || !window.crypto || !window.crypto.subtle) {
+                showToast('Не удалось проверить профиль в этом браузере', 'error');
+                return;
+            }
+
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmation = document.getElementById('confirm-password').value;
+            if (newPassword.length < 8) {
+                showToast('Новый пароль должен содержать не менее 8 символов', 'error');
+                return;
+            }
+            if (newPassword !== confirmation) {
+                showToast('Новые пароли не совпадают', 'error');
+                return;
+            }
+
+            let currentPasswordHash;
+            let newPasswordHash;
+            const newSalt = crypto.getRandomValues(new Uint8Array(16));
+            try {
+                currentPasswordHash = await hashPassword(currentPassword, hexToBytes(currentUser.passwordSalt));
+                if (currentPasswordHash !== currentUser.passwordHash) {
+                    showToast('Текущий пароль введен неверно', 'error');
+                    return;
+                }
+                newPasswordHash = await hashPassword(newPassword, newSalt);
+            } catch (err) {
+                console.error('Ошибка смены пароля:', err);
+                showToast('Не удалось обновить пароль', 'error');
+                return;
+            }
+
+            const oldSalt = currentUser.passwordSalt;
+            const oldHash = currentUser.passwordHash;
+            currentUser.passwordSalt = bytesToHex(newSalt);
+            currentUser.passwordHash = newPasswordHash;
+            if (!saveUsers()) {
+                currentUser.passwordSalt = oldSalt;
+                currentUser.passwordHash = oldHash;
+                return;
+            }
+
+            document.getElementById('form-change-password').reset();
+            document.getElementById('form-change-password').classList.add('hidden');
+            document.getElementById('btn-show-change-password').classList.remove('hidden');
+            resetPasswordVisibility(document.getElementById('profile-dialog'));
+            showToast('Пароль успешно изменен', 'success');
+        }
+
+        function enterProfile(user) {
+            currentUser = user;
+            appState = normalizeState(user.data);
+            currentUser.data = appState;
+            try {
+                localStorage.setItem(SESSION_STORAGE_KEY, currentUser.id);
+            } catch (err) {
+                console.error('Не удалось сохранить сессию профиля:', err);
+                showToast('Вход выполнен, но сессия не будет сохранена после закрытия страницы', 'error');
+            }
+
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('dashboard-page').classList.remove('hidden');
+            document.getElementById('module-navigation').classList.remove('hidden');
+            document.getElementById('public-actions').classList.add('hidden');
+            document.getElementById('profile-actions').classList.remove('hidden');
+            document.getElementById('profile-greeting').textContent = `Здравствуйте, ${currentUser.name}`;
+            document.querySelector('.nav-btn[data-tab="finance"]').click();
+            renderAll();
+        }
+
+        function leaveProfile() {
+            try {
+                localStorage.removeItem(SESSION_STORAGE_KEY);
+            } catch (err) {
+                console.error('Не удалось завершить сохраненную сессию:', err);
+                showToast('Не удалось удалить сессию из браузера', 'error');
+            }
+            currentUser = null;
+            appState = getDefaultState();
+            renderAll();
+            document.getElementById('dashboard-page').classList.add('hidden');
+            document.getElementById('module-navigation').classList.add('hidden');
+            document.getElementById('profile-actions').classList.add('hidden');
+            document.getElementById('public-actions').classList.remove('hidden');
+            showHome();
+        }
+
+        function showHome() {
+            document.getElementById('landing-page').classList.remove('hidden');
+            document.getElementById('auth-screen').classList.add('hidden');
+        }
+
+        function showAuth(mode) {
+            if (usersLoadFailed) {
+                showToast('Локальную базу профилей прочитать не удалось', 'error');
+                return;
+            }
+            document.getElementById('landing-page').classList.add('hidden');
+            document.getElementById('auth-screen').classList.remove('hidden');
+            const isRegistration = mode === 'register';
+            document.getElementById('auth-heading').textContent = isRegistration ? 'Создать профиль' : 'Войти в профиль';
+            document.getElementById('auth-description').textContent = isRegistration
+                ? 'Создайте профиль, чтобы начать работу со своими финансами.'
+                : 'Введите данные, указанные при создании профиля.';
+            document.getElementById('form-login').classList.toggle('hidden', isRegistration);
+            document.getElementById('form-register').classList.toggle('hidden', !isRegistration);
+        }
+
+        function restoreSession() {
+            if (usersLoadFailed) {
+                showToast('Не удалось загрузить локальную базу профилей. Проверьте данные браузера.', 'error');
+                return;
+            }
+            try {
+                const sessionUserId = localStorage.getItem(SESSION_STORAGE_KEY);
+                const user = users.find(item => item.id === sessionUserId);
+                if (user) {
+                    enterProfile(user);
+                } else if (sessionUserId) {
+                    localStorage.removeItem(SESSION_STORAGE_KEY);
+                }
+            } catch (err) {
+                console.error('Ошибка восстановления профиля:', err);
+                showToast('Не удалось восстановить профиль из браузера', 'error');
+            }
+        }
+
+        // Форматирование чисел в денежный формат
+        function formatMoney(value, currency = 'RUB') {
+            const symbol = CURRENCY_SYMBOLS[currency] || currency;
+            return `${Number(value).toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`;
+        }
+
+        // Всплывающие уведомления вместо alert()
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-rose-600 text-white',
+                info: 'bg-slate-800 text-white'
+            };
+            toast.className = `${colors[type] || colors.info} px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-opacity duration-300 pointer-events-auto`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Переключение вкладок навигации
+        function initNavigation() {
+            const buttons = document.querySelectorAll('.nav-btn');
+            const sections = document.querySelectorAll('.tab-section');
+
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const targetTab = btn.dataset.tab;
+
+                    buttons.forEach(b => {
+                        b.classList.remove('bg-indigo-600', 'text-white', 'shadow-sm');
+                        b.classList.add('text-slate-600', 'hover:bg-slate-100');
+                    });
+                    btn.classList.add('bg-indigo-600', 'text-white', 'shadow-sm');
+                    btn.classList.remove('text-slate-600', 'hover:bg-slate-100');
+
+                    sections.forEach(sec => {
+                        if (sec.id === `tab-${targetTab}`) {
+                            sec.classList.remove('hidden');
+                        } else {
+                            sec.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+        }
+
+        // =========================================================
+        // ОТРИСОВКА МОДУЛЯ 1: УПРАВЛЕНИЕ ФИНАНСАМИ
+        // =========================================================
+        function renderFinanceModule() {
+            let totalIncome = 0;
+            let totalExpense = 0;
+            const expenseByCategory = {};
+
+            appState.transactions.forEach(tx => {
+                if (tx.type === 'income') {
+                    totalIncome += Number(tx.amount);
+                } else if (tx.type === 'expense') {
+                    totalExpense += Number(tx.amount);
+                    expenseByCategory[tx.category] = (expenseByCategory[tx.category] || 0) + Number(tx.amount);
+                }
+            });
+
+            document.getElementById('fin-total-balance').textContent = formatMoney(appState.wallets.RUB, 'RUB');
+            document.getElementById('fin-total-income').textContent = `+${formatMoney(totalIncome, 'RUB')}`;
+            document.getElementById('fin-total-expense').textContent = `-${formatMoney(totalExpense, 'RUB')}`;
+
+            // Отрисовка прогресс-баров по категориям расходов
+            const chartContainer = document.getElementById('expense-categories-chart');
+            chartContainer.innerHTML = '';
+
+            const categories = Object.entries(expenseByCategory).sort((a, b) => b[1] - a[1]);
+            if (categories.length === 0) {
+                chartContainer.innerHTML = '<p class="text-sm text-slate-400">Расходы пока не зафиксированы.</p>';
+            } else {
+                categories.forEach(([cat, sum]) => {
+                    const percent = totalExpense > 0 ? Math.round((sum / totalExpense) * 100) : 0;
+                    const item = document.createElement('div');
+                    item.innerHTML = `
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="font-medium text-slate-700">${cat}</span>
+                            <span class="text-slate-600">${formatMoney(sum, 'RUB')} (${percent}%)</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5">
+                            <div class="progress-bar bg-indigo-600 h-2.5 rounded-full transition-all" data-progress="${percent}"></div>
+                        </div>
+                    `;
+                    item.querySelector('.progress-bar').style.setProperty('--progress-width', `${percent}%`);
+                    chartContainer.appendChild(item);
+                });
+            }
+
+            // Таблица транзакций
+            const tbody = document.getElementById('tx-table-body');
+            tbody.innerHTML = '';
+
+            const sortedTx = [...appState.transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            sortedTx.forEach(tx => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                const isIncome = tx.type === 'income';
+                const isLoan = tx.type === 'loan';
+                tr.innerHTML = `
+                    <td class="py-3 px-2 text-slate-600 whitespace-nowrap">${tx.date}</td>
+                    <td class="py-3 px-2 font-medium text-slate-800">${tx.category}</td>
+                    <td class="py-3 px-2 text-slate-600">${tx.desc}</td>
+                    <td class="py-3 px-2 text-right font-semibold whitespace-nowrap ${isIncome ? 'text-emerald-600' : isLoan ? 'text-indigo-600' : 'text-rose-600'}">
+                        ${isIncome || isLoan ? '+' : '-'}${formatMoney(tx.amount, 'RUB')}
+                    </td>
+                    <td class="py-3 px-2 text-center">
+                        ${tx.loanId
+                            ? '<span class="text-xs text-slate-400">Кредит</span>'
+                            : `<button onclick="deleteTransaction(${tx.id})" class="text-xs text-slate-400 hover:text-rose-600 px-2 py-1 rounded-lg cursor-pointer">Удалить</button>`}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function deleteTransaction(id) {
+            const idx = appState.transactions.findIndex(t => t.id === id);
+            if (idx === -1) return;
+            const tx = appState.transactions[idx];
+            if (tx.loanId) {
+                showToast('Операция связана с кредитом и не может быть удалена отдельно', 'error');
+                return;
+            }
+            // Корректировка баланса при удалении записи
+            if (tx.type === 'income') {
+                appState.wallets.RUB -= Number(tx.amount);
+            } else {
+                appState.wallets.RUB += Number(tx.amount);
+            }
+            appState.transactions.splice(idx, 1);
+            saveState();
+            renderAll();
+            showToast('Операция удалена из истории', 'info');
+        }
+
+        // =========================================================
+        // ОТРИСОВКА МОДУЛЯ 2: ИНВЕСТИЦИИ
+        // =========================================================
+        function renderInvestmentsModule() {
+            document.getElementById('inv-available-cash').textContent = `Доступно: ${formatMoney(appState.wallets.RUB, 'RUB')}`;
+
+            // Расчет показателей портфеля
+            let currentPortfolioVal = 0;
+            let totalInvested = 0;
+
+            appState.portfolio.forEach(pos => {
+                const asset = MARKET_ASSETS.find(a => a.id === pos.assetId);
+                if (asset) {
+                    currentPortfolioVal += pos.qty * asset.price;
+                    totalInvested += pos.qty * pos.avgPrice;
+                }
+            });
+
+            const profit = currentPortfolioVal - totalInvested;
+            const profitPercent = totalInvested > 0 ? ((profit / totalInvested) * 100).toFixed(2) : '0.00';
+
+            document.getElementById('inv-portfolio-value').textContent = formatMoney(currentPortfolioVal, 'RUB');
+            document.getElementById('inv-invested-sum').textContent = formatMoney(totalInvested, 'RUB');
+            const profitEl = document.getElementById('inv-profit');
+            profitEl.textContent = `${profit >= 0 ? '+' : ''}${formatMoney(profit, 'RUB')} (${profit >= 0 ? '+' : ''}${profitPercent}%)`;
+            profitEl.className = `text-2xl sm:text-3xl font-bold mt-1 ${profit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+
+            // Карточки доступных активов
+            const marketGrid = document.getElementById('market-assets-grid');
+            marketGrid.innerHTML = '';
+
+            MARKET_ASSETS.forEach(asset => {
+                const isUp = asset.change.startsWith('+');
+                const card = document.createElement('div');
+                card.className = 'info-card p-4 rounded-2xl border border-slate-200 bg-slate-50/60 flex flex-col justify-between gap-3';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-2">
+                            <span class="text-xs font-medium px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-slate-600">${asset.type}</span>
+                            <span class="text-xs font-semibold ${isUp ? 'text-emerald-600' : 'text-rose-600'}">${asset.change}</span>
+                        </div>
+                        <h3 class="font-bold text-slate-900 mt-2">${asset.name}</h3>
+                        <p class="text-xs text-slate-400">Тикер: ${asset.id}</p>
+                        <p class="text-lg font-bold text-slate-800 mt-2">${formatMoney(asset.price, 'RUB')}</p>
+                    </div>
+                    <div class="flex gap-2 pt-2">
+                        <button onclick="buyAsset('${asset.id}')"
+                            class="flex-1 py-2 px-3 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-xl transition cursor-pointer">
+                            Купить 1 шт.
+                        </button>
+                        <button onclick="sellAsset('${asset.id}')"
+                            class="flex-1 py-2 px-3 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-medium rounded-xl transition cursor-pointer">
+                            Продать 1 шт.
+                        </button>
+                    </div>
+                `;
+                marketGrid.appendChild(card);
+            });
+
+            // Таблица портфеля
+            const tbody = document.getElementById('portfolio-table-body');
+            tbody.innerHTML = '';
+
+            if (appState.portfolio.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="py-4 text-center text-slate-400">Портфель пуст. Приобретите активы из списка выше.</td></tr>';
+                return;
+            }
+
+            appState.portfolio.forEach(pos => {
+                const asset = MARKET_ASSETS.find(a => a.id === pos.assetId);
+                if (!asset) return;
+                const totalCost = pos.qty * asset.price;
+                const pnl = (asset.price - pos.avgPrice) * pos.qty;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-2 font-semibold text-slate-900">${asset.name}</td>
+                    <td class="py-3 px-2 text-slate-500">${asset.type}</td>
+                    <td class="py-3 px-2 text-right font-medium">${pos.qty}</td>
+                    <td class="py-3 px-2 text-right text-slate-600">${formatMoney(pos.avgPrice, 'RUB')}</td>
+                    <td class="py-3 px-2 text-right text-slate-800">${formatMoney(asset.price, 'RUB')}</td>
+                    <td class="py-3 px-2 text-right font-semibold text-slate-900">${formatMoney(totalCost, 'RUB')}</td>
+                    <td class="py-3 px-2 text-right font-semibold ${pnl >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${pnl >= 0 ? '+' : ''}${formatMoney(pnl, 'RUB')}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function buyAsset(assetId) {
+            const asset = MARKET_ASSETS.find(a => a.id === assetId);
+            if (!asset) return;
+
+            if (appState.wallets.RUB < asset.price) {
+                showToast('Недостаточно средств на основном счете RUB', 'error');
+                return;
+            }
+
+            appState.wallets.RUB -= asset.price;
+            const existing = appState.portfolio.find(p => p.assetId === assetId);
+            if (existing) {
+                const newTotalCost = (existing.qty * existing.avgPrice) + asset.price;
+                existing.qty += 1;
+                existing.avgPrice = newTotalCost / existing.qty;
+            } else {
+                appState.portfolio.push({ assetId: asset.id, qty: 1, avgPrice: asset.price });
+            }
+
+            saveState();
+            renderAll();
+            showToast(`Куплен актив: ${asset.name} (1 шт.)`, 'success');
+        }
+
+        function sellAsset(assetId) {
+            const existingIdx = appState.portfolio.findIndex(p => p.assetId === assetId);
+            if (existingIdx === -1) {
+                showToast('Этого актива нет в вашем портфеле', 'error');
+                return;
+            }
+
+            const asset = MARKET_ASSETS.find(a => a.id === assetId);
+            const pos = appState.portfolio[existingIdx];
+
+            appState.wallets.RUB += asset.price;
+            pos.qty -= 1;
+            if (pos.qty <= 0) {
+                appState.portfolio.splice(existingIdx, 1);
+            }
+
+            saveState();
+            renderAll();
+            showToast(`Продан актив: ${asset.name} (1 шт.)`, 'info');
+        }
+
+        // =========================================================
+        // ОТРИСОВКА МОДУЛЯ 3: СБЕРЕГАТЕЛЬНЫЕ СЧЕТА
+        // =========================================================
+        function renderSavingsModule() {
+            const list = document.getElementById('savings-list');
+            list.innerHTML = '';
+
+            let totalSaved = 0;
+
+            appState.savings.forEach(goal => {
+                totalSaved += Number(goal.current);
+                const percent = goal.target > 0 ? Math.min(100, Math.round((goal.current / goal.target) * 100)) : 0;
+
+                const card = document.createElement('div');
+                card.className = 'info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between gap-4';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start gap-2">
+                            <h3 class="font-bold text-slate-900 text-base">${goal.name}</h3>
+                            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700">
+                                ${goal.rate}% годовых
+                            </span>
+                        </div>
+                        <div class="mt-3 flex justify-between text-sm">
+                            <span class="font-bold text-indigo-600">${formatMoney(goal.current, 'RUB')}</span>
+                            <span class="text-slate-500">из ${formatMoney(goal.target, 'RUB')}</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5 mt-2">
+                            <div class="progress-bar bg-emerald-500 h-2.5 rounded-full transition-all" data-progress="${percent}"></div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1.5 text-right">Выполнено: ${percent}%</p>
+                    </div>
+
+                    <div class="flex gap-2 pt-2 border-t border-slate-100">
+                        <button onclick="adjustSaving(${goal.id}, 5000)"
+                            class="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-xl transition cursor-pointer">
+                            + Пополнить 5 000 ₽
+                        </button>
+                        <button onclick="adjustSaving(${goal.id}, -5000)"
+                            class="flex-1 py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-xl transition cursor-pointer">
+                            - Снять 5 000 ₽
+                        </button>
+                    </div>
+                `;
+                card.querySelector('.progress-bar').style.setProperty('--progress-width', `${percent}%`);
+                list.appendChild(card);
+            });
+
+            document.getElementById('savings-total-badge').textContent = `Всего накоплено: ${formatMoney(totalSaved, 'RUB')}`;
+        }
+
+        function adjustSaving(goalId, delta) {
+            const goal = appState.savings.find(g => g.id === goalId);
+            if (!goal) return;
+
+            if (delta > 0) {
+                if (appState.wallets.RUB < delta) {
+                    showToast('Недостаточно средств на основном счете RUB для пополнения', 'error');
+                    return;
+                }
+                appState.wallets.RUB -= delta;
+                goal.current += delta;
+                showToast(`Счет «${goal.name}» пополнен на ${formatMoney(delta, 'RUB')}`, 'success');
+            } else {
+                const withdrawAmount = Math.abs(delta);
+                if (goal.current < withdrawAmount) {
+                    showToast('На сберегательном счете недостаточно средств для снятия', 'error');
+                    return;
+                }
+                goal.current -= withdrawAmount;
+                appState.wallets.RUB += withdrawAmount;
+                showToast(`Со счета «${goal.name}» снято ${formatMoney(withdrawAmount, 'RUB')}`, 'info');
+            }
+
+            saveState();
+            renderAll();
+        }
+
+        // =========================================================
+        // ОТРИСОВКА МОДУЛЯ 4: ОБМЕН ВАЛЮТ
+        // =========================================================
+        function renderCurrencyModule() {
+            const grid = document.getElementById('currency-wallets-grid');
+            grid.innerHTML = '';
+
+            const currencyNames = {
+                RUB: 'Российский рубль',
+                USD: 'Доллар США',
+                EUR: 'Евро',
+                CNY: 'Китайский юань'
+            };
+
+            Object.keys(appState.wallets).forEach(code => {
+                const card = document.createElement('div');
+                card.className = 'info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700">${code}</span>
+                        <span class="text-xs text-slate-400">${currencyNames[code]}</span>
+                    </div>
+                    <p class="text-2xl font-bold text-slate-900 mt-3">${formatMoney(appState.wallets[code], code)}</p>
+                `;
+                grid.appendChild(card);
+            });
+
+            updateExchangePreview();
+
+            // История обменов
+            const tbody = document.getElementById('exchange-history-body');
+            tbody.innerHTML = '';
+
+            appState.exchanges.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-2 text-slate-600">${item.date}</td>
+                    <td class="py-3 px-2 font-medium text-rose-600">-${formatMoney(item.fromAmount, item.from)}</td>
+                    <td class="py-3 px-2 font-medium text-emerald-600">+${formatMoney(item.toAmount, item.to)}</td>
+                    <td class="py-3 px-2 text-right text-slate-700">${item.rateText}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function calculateExchange(from, to, amount) {
+            const amountInRub = amount * CURRENCY_RATES_TO_RUB[from];
+            const result = amountInRub / CURRENCY_RATES_TO_RUB[to];
+            const crossRate = CURRENCY_RATES_TO_RUB[from] / CURRENCY_RATES_TO_RUB[to];
+            return { result, crossRate };
+        }
+
+        function updateExchangePreview() {
+            const from = document.getElementById('ex-from').value;
+            const to = document.getElementById('ex-to').value;
+            const amount = parseFloat(document.getElementById('ex-amount').value) || 0;
+
+            const { result, crossRate } = calculateExchange(from, to, amount);
+            document.getElementById('ex-rate-preview').textContent = `1 ${from} = ${crossRate.toFixed(4)} ${to}`;
+            document.getElementById('ex-result-preview').textContent = formatMoney(result, to);
+        }
+
+        // =========================================================
+        // ОТРИСОВКА МОДУЛЯ 5: КРЕДИТЫ
+        // =========================================================
+        const LOAN_ANNUAL_RATE = 6;
+
+        function calculateMonthlyPayment(principal, annualRate, months) {
+            const monthlyRate = annualRate / 100 / 12;
+            if (monthlyRate === 0) return principal / months;
+            return principal * monthlyRate / (1 - Math.pow(1 + monthlyRate, -months));
+        }
+
+        function renderLoansModule() {
+            const activeLoans = appState.loans.filter(loan => loan.balance > 0.01);
+            const totalDebt = activeLoans.reduce((sum, loan) => sum + loan.balance, 0);
+            const monthlyTotal = activeLoans.reduce((sum, loan) => sum + loan.monthlyPayment, 0);
+            document.getElementById('loans-total-debt').textContent = formatMoney(totalDebt, 'RUB');
+            document.getElementById('loans-active-count').textContent = String(activeLoans.length);
+            document.getElementById('loans-monthly-total').textContent = formatMoney(monthlyTotal, 'RUB');
+            document.getElementById('loan-cash-balance').textContent = `На счете: ${formatMoney(appState.wallets.RUB, 'RUB')}`;
+
+            const list = document.getElementById('loans-list');
+            list.innerHTML = '';
+            if (appState.loans.length === 0) {
+                list.innerHTML = '<div class="md:col-span-2 bg-white p-6 rounded-2xl border border-slate-200 text-sm text-slate-500">У вас пока нет кредитов. Рассчитайте платеж и оформите кредит в форме слева.</div>';
+                return;
+            }
+
+            appState.loans.forEach(loan => {
+                const active = loan.balance > 0.01;
+                const interest = loan.balance * loan.annualRate / 100 / 12;
+                const paymentDue = Math.min(loan.monthlyPayment, loan.balance + interest);
+                const card = document.createElement('div');
+                card.className = 'info-card bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between gap-4';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between gap-2">
+                            <h3 class="font-bold text-slate-900">Кредит ${String(loan.id).slice(-6)}</h3>
+                            <span class="px-2.5 py-0.5 text-xs font-semibold rounded-full ${active ? 'bg-amber-50 text-amber-700' : 'bg-emerald-50 text-emerald-700'}">
+                                ${active ? 'Активен' : 'Погашен'}
+                            </span>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-1">Ставка ${loan.annualRate}% • осталось ${loan.monthsLeft} мес.</p>
+                        <div class="mt-4 space-y-2">
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Остаток долга</span><strong>${formatMoney(loan.balance, 'RUB')}</strong></div>
+                            <div class="flex justify-between text-sm"><span class="text-slate-500">Платеж в месяц</span><strong>${formatMoney(loan.monthlyPayment, 'RUB')}</strong></div>
+                            ${active ? `<p class="text-xs text-slate-400">Ближайший платеж с учетом процентов: ${formatMoney(paymentDue, 'RUB')}</p>` : ''}
+                        </div>
+                    </div>
+                    <button onclick="payLoan(${loan.id})" ${!active || appState.wallets.RUB < paymentDue ? 'disabled' : ''}
+                        class="w-full py-2.5 px-3 ${active && appState.wallets.RUB >= paymentDue ? 'bg-indigo-600 hover:bg-indigo-700 text-white cursor-pointer' : 'bg-slate-100 text-slate-400 cursor-not-allowed'} text-sm font-medium rounded-xl transition">
+                        ${active ? 'Внести ежемесячный платеж' : 'Кредит погашен'}
+                    </button>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function updateLoanPreview() {
+            const amount = Number(document.getElementById('loan-amount').value);
+            const months = Number(document.getElementById('loan-term').value);
+            const paymentEl = document.getElementById('loan-payment-preview');
+            const totalEl = document.getElementById('loan-total-preview');
+            if (!Number.isFinite(amount) || !Number.isInteger(months) || amount <= 0 || months <= 0) {
+                paymentEl.textContent = '—';
+                totalEl.textContent = '—';
+                return;
+            }
+            const payment = calculateMonthlyPayment(amount, LOAN_ANNUAL_RATE, months);
+            paymentEl.textContent = formatMoney(payment, 'RUB');
+            totalEl.textContent = formatMoney(payment * months, 'RUB');
+        }
+
+        function payLoan(loanId) {
+            const loan = appState.loans.find(item => item.id === loanId);
+            if (!loan || loan.balance <= 0.01) return;
+
+            const interest = loan.balance * loan.annualRate / 100 / 12;
+            const payment = Math.min(loan.monthlyPayment, loan.balance + interest);
+            if (appState.wallets.RUB < payment) {
+                showToast('Недостаточно средств на основном счете для платежа', 'error');
+                return;
+            }
+
+            appState.wallets.RUB -= payment;
+            loan.balance = Math.max(0, loan.balance + interest - payment);
+            loan.monthsLeft = Math.max(0, loan.monthsLeft - 1);
+            if (loan.balance < 0.01 || loan.monthsLeft === 0) {
+                loan.balance = 0;
+                loan.monthsLeft = 0;
+            }
+            appState.transactions.push({
+                id: Date.now(),
+                type: 'expense',
+                category: 'Погашение кредита',
+                amount: payment,
+                desc: `Ежемесячный платеж по кредиту ${String(loan.id).slice(-6)}`,
+                date: new Date().toISOString().split('T')[0],
+                loanId: loan.id
+            });
+
+            saveState();
+            renderAll();
+            showToast(`Платеж по кредиту внесен: ${formatMoney(payment, 'RUB')}`, 'success');
+        }
+
+        // =========================================================
+        // ОБРАБОТЧИКИ ФОРМ И СОБЫТИЙ
+        // =========================================================
+        function initForms() {
+            // Установка сегодняшней даты по умолчанию
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('tx-date').value = today;
+
+            document.querySelectorAll('[data-auth-mode]').forEach(button => {
+                button.addEventListener('click', () => showAuth(button.dataset.authMode));
+            });
+            document.getElementById('btn-back-home').addEventListener('click', showHome);
+            document.getElementById('btn-logout').addEventListener('click', leaveProfile);
+            document.getElementById('btn-profile').addEventListener('click', openProfile);
+            document.getElementById('btn-close-profile').addEventListener('click', closeProfile);
+            document.getElementById('btn-show-change-password').addEventListener('click', () => {
+                document.getElementById('btn-show-change-password').classList.add('hidden');
+                document.getElementById('form-change-password').classList.remove('hidden');
+            });
+            document.getElementById('form-register').addEventListener('submit', registerProfile);
+            document.getElementById('form-login').addEventListener('submit', loginProfile);
+            document.getElementById('form-change-password').addEventListener('submit', changePassword);
+            document.querySelectorAll('[data-toggle-password]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const input = document.getElementById(button.dataset.togglePassword);
+                    const isVisible = input.type === 'password';
+                    input.type = isVisible ? 'text' : 'password';
+                    button.textContent = isVisible ? 'Скрыть' : 'Показать';
+                    button.setAttribute('aria-pressed', String(isVisible));
+                });
+            });
+
+            // Добавление финансовой операции
+            document.getElementById('form-transaction').addEventListener('submit', e => {
+                e.preventDefault();
+                const type = document.getElementById('tx-type').value;
+                const category = document.getElementById('tx-category').value;
+                const amount = parseFloat(document.getElementById('tx-amount').value);
+                const desc = document.getElementById('tx-desc').value.trim();
+                const date = document.getElementById('tx-date').value;
+
+                // Примечание: в базовой версии v1.0 минимальная проверка; в ходе практики (Этап 1.3) можно усилить валидацию
+                if (!amount || amount <= 0) {
+                    showToast('Введите корректную положительную сумму', 'error');
+                    return;
+                }
+
+                appState.transactions.push({
+                    id: Date.now(),
+                    type,
+                    category,
+                    amount,
+                    desc,
+                    date
+                });
+
+                if (type === 'income') {
+                    appState.wallets.RUB += amount;
+                } else {
+                    appState.wallets.RUB -= amount;
+                }
+
+                saveState();
+                renderAll();
+                e.target.reset();
+                document.getElementById('tx-date').value = today;
+                showToast('Финансовая операция успешно добавлена', 'success');
+            });
+
+            // Создание нового сберегательного счета
+            document.getElementById('form-saving-goal').addEventListener('submit', e => {
+                e.preventDefault();
+                const name = document.getElementById('goal-name').value.trim();
+                const target = parseFloat(document.getElementById('goal-target').value);
+                const initial = parseFloat(document.getElementById('goal-initial').value) || 0;
+                const rate = parseFloat(document.getElementById('goal-rate').value) || 0;
+
+                if (target <= 0 || initial < 0) {
+                    showToast('Проверьте корректность сумм', 'error');
+                    return;
+                }
+                if (initial > appState.wallets.RUB) {
+                    showToast('Недостаточно средств на основном счете RUB для начального взноса', 'error');
+                    return;
+                }
+
+                appState.wallets.RUB -= initial;
+                appState.savings.push({
+                    id: Date.now(),
+                    name,
+                    current: initial,
+                    target,
+                    rate
+                });
+
+                saveState();
+                renderAll();
+                e.target.reset();
+                showToast(`Сберегательный счет «${name}» открыт`, 'success');
+            });
+
+            // Обновление превью курса при вводе
+            ['ex-from', 'ex-to', 'ex-amount'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateExchangePreview);
+                document.getElementById(id).addEventListener('change', updateExchangePreview);
+            });
+
+            // Выполнение обмена валют
+            document.getElementById('form-currency-exchange').addEventListener('submit', e => {
+                e.preventDefault();
+                const from = document.getElementById('ex-from').value;
+                const to = document.getElementById('ex-to').value;
+                const amount = parseFloat(document.getElementById('ex-amount').value);
+
+                if (from === to) {
+                    showToast('Выберите разные валюты для обмена', 'error');
+                    return;
+                }
+                if (!amount || amount <= 0) {
+                    showToast('Введите корректную сумму для обмена', 'error');
+                    return;
+                }
+                if (appState.wallets[from] < amount) {
+                    showToast(`Недостаточно средств на счете ${from}`, 'error');
+                    return;
+                }
+
+                const { result, crossRate } = calculateExchange(from, to, amount);
+                appState.wallets[from] -= amount;
+                appState.wallets[to] += result;
+
+                const nowStr = new Date().toLocaleString('ru-RU', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                });
+
+                appState.exchanges.unshift({
+                    id: Date.now(),
+                    date: nowStr,
+                    from,
+                    fromAmount: amount,
+                    to,
+                    toAmount: result,
+                    rateText: `1 ${from} = ${crossRate.toFixed(4)} ${to}`
+                });
+
+                saveState();
+                renderAll();
+                showToast(`Обмен выполнен: ${formatMoney(amount, from)} → ${formatMoney(result, to)}`, 'success');
+            });
+
+            ['loan-amount', 'loan-term'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateLoanPreview);
+            });
+
+            document.getElementById('form-loan').addEventListener('submit', e => {
+                e.preventDefault();
+                const amount = Number(document.getElementById('loan-amount').value);
+                const months = Number(document.getElementById('loan-term').value);
+                if (!Number.isFinite(amount) || amount < 10000 || amount > 1000000 || !Number.isInteger(months) || months < 3 || months > 60) {
+                    showToast('Укажите сумму от 10 000 до 1 000 000 ₽ и срок от 3 до 60 месяцев', 'error');
+                    return;
+                }
+
+                const loan = {
+                    id: Date.now(),
+                    balance: amount,
+                    annualRate: LOAN_ANNUAL_RATE,
+                    monthlyPayment: calculateMonthlyPayment(amount, LOAN_ANNUAL_RATE, months),
+                    monthsLeft: months
+                };
+                appState.loans.push(loan);
+                appState.wallets.RUB += amount;
+                appState.transactions.push({
+                    id: Date.now() + 1,
+                    type: 'loan',
+                    category: 'Получение кредита',
+                    amount,
+                    desc: `Зачисление кредита на ${months} мес.`,
+                    date: new Date().toISOString().split('T')[0],
+                    loanId: loan.id
+                });
+
+                saveState();
+                renderAll();
+                showToast(`На основной счет зачислено ${formatMoney(amount, 'RUB')}`, 'success');
+            });
+
+            // Сброс демо-данных
+            document.getElementById('btn-reset-demo').addEventListener('click', () => {
+                appState = getDefaultState();
+                saveState();
+                renderAll();
+                showToast('Демо-данные восстановлены до исходного состояния v1.0', 'info');
+            });
+        }
+
+        function renderAll() {
+            renderFinanceModule();
+            renderInvestmentsModule();
+            renderSavingsModule();
+            renderCurrencyModule();
+            renderLoansModule();
+        }
+
+        // Инициализация приложения при загрузке страницы
+        window.onload = function () {
+            initNavigation();
+            initForms();
+            updateLoanPreview();
+            restoreSession();
+            refreshMarketData();
+            window.setInterval(refreshMarketData, MARKET_REFRESH_INTERVAL_MS);
+        };
+    </script>
+</body>
+</html>

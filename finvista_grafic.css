@@ -1,0 +1,111 @@
+.info-card {
+    transform: scale(1);
+    transition: transform 180ms ease, box-shadow 180ms ease;
+    will-change: transform;
+}
+
+.progress-bar {
+    width: var(--progress-width, 0%);
+}
+
+@media (hover: hover) {
+    .info-card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+        z-index: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .info-card {
+        transition: none;
+        will-change: auto;
+    }
+}
+
+.financial-overview-card {
+    overflow: hidden;
+    animation: overview-enter 700ms ease-out both, overview-float 4s ease-in-out 700ms infinite;
+}
+
+.financial-overview-card::before {
+    content: "";
+    position: absolute;
+    inset: -70% -40%;
+    background: linear-gradient(110deg, transparent 42%, rgba(255, 255, 255, 0.16) 50%, transparent 58%);
+    transform: translateX(-55%);
+    animation: overview-shine 5s ease-in-out 1.2s infinite;
+    pointer-events: none;
+}
+
+.financial-overview-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+.financial-overview-card > div:last-child > div {
+    animation: overview-row-enter 500ms ease-out both;
+}
+
+.financial-overview-card > div:last-child > div:nth-child(2) {
+    animation-delay: 140ms;
+}
+
+.financial-overview-card > div:last-child > div:nth-child(3) {
+    animation-delay: 280ms;
+}
+
+@keyframes overview-enter {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes overview-float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes overview-shine {
+    0%, 35% {
+        transform: translateX(-55%);
+    }
+    70%, 100% {
+        transform: translateX(55%);
+    }
+}
+
+@keyframes overview-row-enter {
+    from {
+        opacity: 0;
+        transform: translateX(14px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@media (hover: hover) {
+    .financial-overview-card:hover {
+        border-color: rgba(255, 255, 255, 0.32);
+        box-shadow: 0 24px 55px rgba(30, 27, 75, 0.35);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .financial-overview-card,
+    .financial-overview-card::before,
+    .financial-overview-card > div:last-child > div {
+        animation: none;
+    }
+}
