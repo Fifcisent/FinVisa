@@ -709,8 +709,7 @@
                 Проект не предназначен для незаконной деятельности.
             </p>
             <div class="flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-                <p>Учебный проект по ПМ.06 «Сопровождение информационных систем» • Вариант: «FinVista: Финансовый аналитический центр»</p>
-                <p>СПб ГБПОУ «Колледж метростроя» • Специальность 09.02.07</p>
+                <p>FinVista — учебный демонстрационный проект</p>
             </div>
         </div>
     </footer>
@@ -758,47 +757,43 @@
             { id: 'OFZ26238', name: 'ОФЗ 26238', type: 'Облигации', price: 564.20, change: '+0.25%' },
             { id: 'GLDRUB', name: 'Золото (GLDRUB)', type: 'ETF / Металлы', price: 7850.00, change: '-0.40%' }
         ];
-        const MARKET_REFRESH_INTERVAL_MS = 5000;
+        const MARKET_REFRESH_INTERVAL_MS = 120000;
+        const MIN_WIND = -10;
+        const MAX_WIND = 10;
+        const MAX_WIND_STEP = 3;
+        let marketWind = 0;
+        const marketSensitivities = Object.fromEntries(
+            MARKET_ASSETS
+                .filter(asset => asset.type === 'Акции')
+                .map(asset => [asset.id, 0.05 + Math.random() * 0.07])
+        );
 
-        async function refreshMarketData() {
+        function refreshMarketData() {
             const status = document.getElementById('market-wind-status');
-            try {
-                const response = await fetch('/api/market', { cache: 'no-store' });
-                if (!response.ok) {
-                    throw new Error(`Market API returned HTTP ${response.status}`);
-                }
+            const windStep = Math.floor(Math.random() * (MAX_WIND_STEP * 2 + 1)) - MAX_WIND_STEP;
+            const nextWind = Math.max(MIN_WIND, Math.min(MAX_WIND, marketWind + windStep));
+            const windChange = nextWind - marketWind;
+            marketWind = nextWind;
 
-                const market = await response.json();
-                if (
-                    !market
-                    || !Number.isFinite(market.wind)
-                    || !Number.isFinite(market.windChange)
-                    || !market.prices
-                    || !market.priceChangesPct
-                ) {
-                    throw new Error('Market API returned an invalid response.');
-                }
+            MARKET_ASSETS.filter(asset => asset.type === 'Акции').forEach(asset => {
+                const oldPrice = asset.price;
+                const windEffectPct = windChange * marketSensitivities[asset.id]
+                    * (1 + Math.abs(marketWind) / MAX_WIND);
+                const independentNoisePct = Math.random() * 0.7 - 0.35;
+                const priceChangePct = windEffectPct + independentNoisePct;
+                asset.price = Math.max(
+                    0.01,
+                    Math.round(asset.price * (1 + priceChangePct / 100) * 100) / 100
+                );
+                const actualChangePct = (asset.price / oldPrice - 1) * 100;
+                asset.change = `${actualChangePct >= 0 ? '+' : ''}${actualChangePct.toFixed(2)}%`;
+            });
 
-                MARKET_ASSETS.filter(asset => asset.type === 'Акции').forEach(asset => {
-                    const price = market.prices[asset.id];
-                    const change = market.priceChangesPct[asset.id];
-                    if (!Number.isFinite(price) || !Number.isFinite(change)) {
-                        throw new Error(`Market API has no valid data for ${asset.id}.`);
-                    }
-                    asset.price = price;
-                    asset.change = `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-                });
-
-                const windSign = market.wind > 0 ? '+' : '';
-                const changeSign = market.windChange > 0 ? '+' : '';
-                status.textContent = `Ветер: ${windSign}${market.wind} (${changeSign}${market.windChange}) • обновление раз в 2 мин.`;
-                status.className = `text-xs ${market.windChange >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
-                renderInvestmentsModule();
-            } catch (error) {
-                console.error('Не удалось получить данные симулятора рынка:', error);
-                status.textContent = 'Симулятор недоступен. Запустите python server.py.';
-                status.className = 'text-xs text-rose-700';
-            }
+            const windSign = marketWind > 0 ? '+' : '';
+            const changeSign = windChange > 0 ? '+' : '';
+            status.textContent = `Ветер: ${windSign}${marketWind} (${changeSign}${windChange}) • обновление раз в 2 мин.`;
+            status.className = `text-xs ${windChange >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
+            renderInvestmentsModule();
         }
 
         // Начальные демо-данные для первого запуска
