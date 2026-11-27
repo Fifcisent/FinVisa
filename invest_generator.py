@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Dict, Mapping, Optional
 
-DEFAULT_INTERVAL_SECONDS = 120
+DEFAULT_INTERVAL_SECONDS = 60
 MIN_WIND = -10
 MAX_WIND = 10
 MAX_WIND_STEP = 3

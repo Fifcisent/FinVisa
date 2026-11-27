@@ -758,7 +758,7 @@
             { id: 'OFZ26238', name: 'ОФЗ 26238', type: 'Облигации', price: 564.20, change: '+0.25%' },
             { id: 'GLDRUB', name: 'Золото (GLDRUB)', type: 'ETF / Металлы', price: 7850.00, change: '-0.40%' }
         ];
-        const MARKET_REFRESH_INTERVAL_MS = 120000;
+        const MARKET_REFRESH_INTERVAL_MS = 60000;
         const MIN_WIND = -10;
         const MAX_WIND = 10;
         const MAX_WIND_STEP = 3;
@@ -799,7 +799,7 @@
 
             const windSign = marketWind > 0 ? '+' : '';
             const changeSign = windChange > 0 ? '+' : '';
-            status.textContent = `Ветер: ${windSign}${marketWind} (${changeSign}${windChange}) • обновление раз в 2 мин.`;
+            status.textContent = `Ветер: ${windSign}${marketWind} (${changeSign}${windChange}) • обновление раз в минуту.`;
             status.className = `text-xs ${windChange >= 0 ? 'text-emerald-700' : 'text-rose-700'}`;
             renderInvestmentsModule();
         }
