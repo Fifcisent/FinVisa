@@ -69,7 +69,7 @@ class WindDrivenMarket:
         self._wind_change = 0
         self._price_changes_pct = {ticker: 0.0 for ticker in prices}
         self._sensitivities = {
-            ticker: self._rng.uniform(0.05, 0.12) for ticker in prices
+            ticker: self._rng.uniform(0.15, 0.45) for ticker in prices
         }
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
@@ -95,10 +95,19 @@ class WindDrivenMarket:
             wind_scale = 1 + abs(self._wind) / MAX_WIND
             for ticker in tickers:
                 wind_effect_pct = (
-                    self._wind_change * self._sensitivities[ticker] * wind_scale
+                    (self._wind_change + self._wind * 0.4)
+                    * self._sensitivities[ticker]
+                    * wind_scale
                 )
                 independent_noise_pct = self._rng.uniform(-0.35, 0.35)
-                price_change_pct = wind_effect_pct + independent_noise_pct
+                shock_pct = 0.0
+                if self._rng.random() < 0.03 + abs(self._wind) * 0.02:
+                    if self._wind == 0:
+                        shock_direction = self._rng.choice((-1, 1))
+                    else:
+                        shock_direction = 1 if self._wind > 0 else -1
+                    shock_pct = shock_direction * self._rng.uniform(12.0, 40.0)
+                price_change_pct = wind_effect_pct + independent_noise_pct + shock_pct
                 self._prices[ticker] = max(
                     0.01,
                     round(

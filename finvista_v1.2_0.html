@@ -703,6 +703,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-3">
             <p class="text-center text-xs leading-5 text-amber-800" role="note">
                 Важно: это учебная демонстрация. Сервис не подключается к биржам и не выполняет реальные финансовые операции.
+                Цены акций синтетические и могут резко падать или расти из-за случайной симуляции.
                 Используйте только вымышленные данные и не вводите реальные персональные или банковские сведения.
                 Имя, email, хэш пароля и профиль хранятся только в localStorage этого браузера и не синхронизируются с сервером.
                 При публичном доступе Cloudflare может обрабатывать сетевые метаданные; Tailwind и Google Fonts загружаются со сторонних CDN.
@@ -765,7 +766,7 @@
         const marketSensitivities = Object.fromEntries(
             MARKET_ASSETS
                 .filter(asset => asset.type === 'Акции')
-                .map(asset => [asset.id, 0.05 + Math.random() * 0.07])
+                .map(asset => [asset.id, 0.15 + Math.random() * 0.3])
         );
 
         function refreshMarketData() {
@@ -777,10 +778,17 @@
 
             MARKET_ASSETS.filter(asset => asset.type === 'Акции').forEach(asset => {
                 const oldPrice = asset.price;
-                const windEffectPct = windChange * marketSensitivities[asset.id]
+                const windEffectPct = (windChange + marketWind * 0.4) * marketSensitivities[asset.id]
                     * (1 + Math.abs(marketWind) / MAX_WIND);
                 const independentNoisePct = Math.random() * 0.7 - 0.35;
-                const priceChangePct = windEffectPct + independentNoisePct;
+                let shockPct = 0;
+                if (Math.random() < 0.03 + Math.abs(marketWind) * 0.02) {
+                    const shockDirection = marketWind === 0
+                        ? (Math.random() < 0.5 ? -1 : 1)
+                        : Math.sign(marketWind);
+                    shockPct = shockDirection * (12 + Math.random() * 28);
+                }
+                const priceChangePct = windEffectPct + independentNoisePct + shockPct;
                 asset.price = Math.max(
                     0.01,
                     Math.round(asset.price * (1 + priceChangePct / 100) * 100) / 100
@@ -800,7 +808,7 @@
         function getDefaultState() {
             return {
                 wallets: {
-                    RUB: 0,
+                    RUB: 200000,
                     USD: 0,
                     EUR: 0,
                     CNY: 0
